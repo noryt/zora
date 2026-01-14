@@ -30,7 +30,45 @@ def apply_custom_ui():
             padding-right: 0.8rem !important;
             max-width: 100% !important;
         }
+        
+        /* EL NUEVO BOTÓN ZORA PREMUM */
+        div.stButton > button, .stFormSubmitButton > button {
+            background: linear-gradient(135deg, #FFD700 0%, #b8860b 100%) !important;
+            color: #000000 !important;
+            border: 1px solid rgba(0,0,0,0.1) !important;
+            border-radius: 16px !important; /* Más redondeado y moderno */
+            height: 4.2rem !important;
+            font-weight: 900 !important;
+            font-size: 1.1rem !important;
+            letter-spacing: 1px !important;
+            text-transform: uppercase;
+            width: 100% !important;
+            
+            /* Efecto de Elevación y Brillo */
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3), 
+                        inset 0 2px 2px rgba(255,255,255,0.5) !important;
+            transition: all 0.2s ease-in-out !important;
+        }
 
+        /* Efecto al pasar el mouse (PC) */
+        div.stButton > button:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5) !important;
+            filter: brightness(1.1);
+        }
+
+        /* Efecto al presionar (Móvil y PC) */
+        div.stButton > button:active {
+            transform: translateY(1px) !important;
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.2) !important;
+            background: linear-gradient(135deg, #b8860b 0%, #FFD700 100%) !important;
+        }
+
+        /* Forzar color de texto negro en todo momento */
+        div.stButton > button p {
+            color: #000000 !important;
+            font-weight: 900 !important;
+        }
         /* 2. DISEÑO RESPONSIVO DE COLUMNAS (Apilado Vertical) */
         @media (max-width: 768px) {
             div[data-testid="column"] {
