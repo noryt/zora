@@ -142,11 +142,6 @@ def apply_custom_ui():
         .block-container { padding-top: 5.5rem !important; }
         </style>
 
-        <div class="ticker-wrapper">
-            <div class="ticker-text">
-                ZORA SENTINEL: MARKET RADAR ACTIVE &nbsp;&nbsp;&nbsp; BTC/USD: $43,120 &nbsp;&nbsp;&nbsp; ETH/USD: $2,580 &nbsp;&nbsp;&nbsp; SNIPER MODE: ON
-            </div>
-        </div>
     """, unsafe_allow_html=True)
     # TICKER TAPE REAL DE TRADINGVIEW (Datos de Coinbase)
     ticker_html = """
@@ -158,7 +153,7 @@ def apply_custom_ui():
     </div>
     """
     components.html(ticker_html, height=46)
-    
+
 
 # --- 3. COMPONENTES ---
 def render_tv_chart(symbol):
