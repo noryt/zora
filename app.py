@@ -185,9 +185,9 @@ def render_auth(db):
     
     # Features informativas
     c1, c2, c3 = st.columns(3)
-    with c1: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center;"><b>🛰️ SCANNER</b></div>', unsafe_allow_html=True)
-    with c2: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center;"><b>🧬 CONFIGURACION</b></div>', unsafe_allow_html=True)
-    with c3: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center;"><b>📝 EXPORT</b></div>', unsafe_allow_html=True)
+    with c1: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center; color: #fff;"><b>🛰️ SCANNER</b></div>', unsafe_allow_html=True)
+    with c2: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center; color: #fff"><b>🧬 CONFIGURACION</b></div>', unsafe_allow_html=True)
+    with c3: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center; color: #fff"><b>📝 EXPORT</b></div>', unsafe_allow_html=True)
 
     st.divider()
     _, auth_col, _ = st.columns([1, 1.5, 1])
