@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. UI: CSS DE ALTO CONTRASTE Y ESTILO APP ---
+# --- 2. UI: CSS DE ALTO CONTRASTE (Botón Amarillo + Texto Negro) ---
 def apply_custom_ui():
     st.markdown("""
         <style>
@@ -24,7 +24,7 @@ def apply_custom_ui():
         .stApp { background-color: #05070a !important; }
         h1, h2, h3, p, span, label { color: #ffffff !important; font-family: 'Inter', sans-serif; }
 
-        /* EL BOTÓN AMARILLO ZORA (Letras Negras 900) */
+        /* BOTÓN AMARILLO ZORA (Letras Negras 900) */
         div.stButton > button, .stDownloadButton > button {
             background-color: #FFD700 !important;
             color: #000000 !important;
@@ -36,6 +36,7 @@ def apply_custom_ui():
             text-transform: uppercase;
             width: 100%;
         }
+        /* Forzado de color negro para el texto del botón */
         div.stButton > button p, .stDownloadButton > button p {
             color: #000000 !important;
             font-weight: 900 !important;
@@ -117,7 +118,7 @@ def render_auth(db):
         with m[0]:
             el = st.text_input("Email", key="l_e")
             pl = st.text_input("Password", type="password", key="l_p")
-            if st.button("ENTRAR AL TERMINAL", key="btn_login"):
+            if st.button("ENTRAR AL TERMINAL", key="btn_login", type="primary"):
                 success, user = db.login_user(el, pl)
                 if success:
                     st.session_state.update({'logged_in': True, 'user_id': user.id, 'user_email': user.email})
@@ -125,7 +126,7 @@ def render_auth(db):
         with m[1]:
             er = st.text_input("Nuevo Email", key="r_e")
             pr = st.text_input("Nueva Contraseña", type="password", key="r_p")
-            if st.button("CREAR CUENTA", key="btn_reg"):
+            if st.button("CREAR CUENTA", key="btn_reg", type="primary"):
                 try:
                     db.supabase.auth.sign_up({"email": er, "password": pr})
                     st.success("Verifica tu email para activar la cuenta.")
@@ -155,11 +156,11 @@ def render_dashboard(db):
                     st.markdown(f"#### {s['symbol']} | RSI: <span style='color:#FFD700'>{s['rsi']}</span>", unsafe_allow_html=True)
                     st.write(f"Entrada: **${s['entry_price']:,}**")
                     with st.expander("Ver Gráfico"): render_tv_chart(s['symbol'])
-                    if st.button(f"EJECUTAR {s['symbol']}", key=f"g_{s['symbol']}"):
+                    if st.button(f"EJECUTAR {s['symbol']}", key=f"g_{s['symbol']}", type="primary"):
                         db.save_trade(u_id, s['symbol'], "LONG", s['entry_price'], s.get('take_profit', 0), "Signal")
                         st.toast("Trade guardado en el Diario.")
 
-    # --- JOURNAL (CORREGIDO) ---
+    # --- JOURNAL ---
     with t_jou:
         res = db.get_trade_history(u_id)
         if res.data:
@@ -172,15 +173,30 @@ def render_dashboard(db):
             
             st.download_button(label="📥 EXPORTAR HISTORIAL (CSV)", data=df.to_csv(index=False), file_name='zora_trades.csv', mime='text/csv', use_container_width=True)
             
-            # Lógica de Cierre
-            if 'closing_id' in st.session_state:
+            # LÓGICA DE CIERRE PROTEGIDA
+            if 'closing_id' in st.session_state and 'closing_symbol' in st.session_state:
                 with st.form("f_close"):
                     st.markdown(f"### Cerrar {st.session_state.closing_symbol}")
-                    exit_p = st.number_input("Precio de Salida Real", format="%.4f", value=float(st.session_state.entry_p))
-                    if st.form_submit_button("CONFIRMAR CIERRE", type="primary"):
+                    entry_p_float = float(st.session_state.entry_p) if st.session_state.entry_p else 0.0
+                    exit_p = st.number_input("Precio de Salida Real", format="%.4f", value=entry_p_float)
+                    
+                    c_f1, c_f2 = st.columns(2)
+                    if c_f1.form_submit_button("CONFIRMAR CIERRE", type="primary"):
                         profit = exit_p - st.session_state.entry_p
-                        db.supabase.table("journal").update({"exit_price": exit_p, "status": "CLOSED", "profit": profit, "closed_at": datetime.now().isoformat()}).eq("id", st.session_state.closing_id).execute()
+                        db.supabase.table("journal").update({
+                            "exit_price": exit_p, 
+                            "status": "CLOSED", 
+                            "profit": profit, 
+                            "closed_at": datetime.now().isoformat()
+                        }).eq("id", st.session_state.closing_id).execute()
+                        
                         del st.session_state['closing_id']
+                        del st.session_state['closing_symbol']
+                        st.rerun()
+                    
+                    if c_f2.form_submit_button("CANCELAR"):
+                        del st.session_state['closing_id']
+                        del st.session_state['closing_symbol']
                         st.rerun()
 
             st.write("---")
@@ -190,12 +206,16 @@ def render_dashboard(db):
                     with c1:
                         st.write(f"**{trade['symbol']}**")
                         e, tp = trade.get('entry_price', 0), trade.get('take_profit', 0)
-                        ex = trade.get('exit_price', 0) if trade['status'] == 'CLOSED' else "---"
-                        st.markdown(f"<small>IN: **${e:,.2}** | TP: <span style='color:#FFD700'>**${tp:,.2}**</span> | OUT: **${ex}**</small>", unsafe_allow_html=True)
+                        ex = f"${trade.get('exit_price', 0):,.2f}" if trade['status'] == 'CLOSED' else "---"
+                        st.markdown(f"<small>IN: **${e:,.2f}** | TP: <span style='color:#FFD700'>**${tp:,.2f}**</span> | OUT: **{ex}**</small>", unsafe_allow_html=True)
                     with c2:
                         if trade['status'] == 'OPEN':
-                            if st.button("CERRAR", key=f"c_{trade['id']}"):
-                                st.session_state.update({'closing_id': trade['id'], 'closing_symbol': trade['symbol'], 'entry_p': trade['entry_price']})
+                            if st.button("CERRAR", key=f"c_{trade['id']}", type="primary"):
+                                st.session_state.update({
+                                    'closing_id': trade['id'], 
+                                    'closing_symbol': trade['symbol'], 
+                                    'entry_p': trade['entry_price']
+                                })
                                 st.rerun()
                         else:
                             clr = "#00ff88" if trade['profit'] > 0 else "#ff4b4b"
@@ -215,8 +235,10 @@ def render_dashboard(db):
                 tf = st.selectbox("Timeframe", ["5m", "15m", "1h"], index=1)
                 vol = st.number_input("Volumen Mínimo", 0, 1000000, int(conf.get('min_vol', 50000)))
             
-            if st.form_submit_button("GUARDAR CONFIGURACIÓN ADN"):
-                db.supabase.table("strategies").upsert({"user_id": u_id, "rsi_limit": rsi, "bb_mult": bb, "timeframe": tf, "min_vol": vol}).execute()
+            if st.form_submit_button("GUARDAR CONFIGURACIÓN ADN", type="primary"):
+                db.supabase.table("strategies").upsert({
+                    "user_id": u_id, "rsi_limit": rsi, "bb_mult": bb, "timeframe": tf, "min_vol": vol
+                }).execute()
                 st.success("Sincronizado con el motor.")
 
 # --- EJECUCIÓN ---
