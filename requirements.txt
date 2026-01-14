@@ -1,0 +1,6 @@
+streamlit
+pandas
+supabase
+python-dotenv
+coinbase-python
+streamlit-authenticator

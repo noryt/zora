@@ -1,0 +1,16 @@
+{
+  "name": "Zora Sentinel",
+  "short_name": "Zora",
+  "description": "Algorithmic Trading Sentinel",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0e14",
+  "theme_color": "#FFD700",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2312/2312521.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
