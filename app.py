@@ -203,7 +203,7 @@ def render_dashboard(db):
                         del st.session_state['closing_symbol']
                         st.rerun()
                     
-                    if c_f2.form_submit_button("CANCELAR"):
+                    if c_f2.form_submit_button("CANCELAR", type="primary"):
                         del st.session_state['closing_id']
                         del st.session_state['closing_symbol']
                         st.rerun()
