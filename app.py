@@ -148,6 +148,17 @@ def apply_custom_ui():
             </div>
         </div>
     """, unsafe_allow_html=True)
+    # TICKER TAPE REAL DE TRADINGVIEW (Datos de Coinbase)
+    ticker_html = """
+    <div style="position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; height: 46px; background: #161b22;">
+        <iframe scrolling="no" allowtransparency="true" frameborder="0" 
+            src="https://s.tradingview.com/embed-widget/ticker-tape/?method=tags&symbols%5B%5D%7B%22proName%22%3A%22COINBASE%3ABTCUSD%22%2C%22title%22%3A%22BTC%2FUSD%22%7D%2C%7B%22proName%22%3A%22COINBASE%3AETHUSD%22%2C%22title%22%3A%22ETH%2FUSD%22%7D%2C%7B%22proName%22%3A%22COINBASE%3ASOLUSD%22%2C%22title%22%3A%22SOL%2FUSD%22%7D%2C%7B%22proName%22%3A%22COINBASE%3AADAUSD%22%2C%22title%22%3A%22ADA%2FUSD%22%7D&showSymbolLogo=true&colorTheme=dark&isTransparent=false&displayMode=adaptive&locale=es" 
+            width="100%" height="46">
+        </iframe>
+    </div>
+    """
+    components.html(ticker_html, height=46)
+    
 
 # --- 3. COMPONENTES ---
 def render_tv_chart(symbol):
@@ -175,7 +186,7 @@ def render_tv_chart(symbol):
 # --- 4. SECCIÓN DE AUTENTICACIÓN ---
 def render_auth(db):
     apply_custom_ui()
-    st.markdown("<h1 style='text-align: center; color: #FFD700; font-size: 3rem; font-weight: 900; margin-top:20px;'>ZORA SENTINEL</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #FFD700; font-size: 3rem; font-weight: 900; margin-top:20px;'>ZORA BY SCALINITY</h1>", unsafe_allow_html=True)
     
     # Features informativas
     c1, c2, c3 = st.columns(3)
