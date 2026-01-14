@@ -21,4 +21,4 @@ jobs:
           CB_API_SECRET: ${{ secrets.CB_API_SECRET }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: python engine_scan.py 
+        run: python engine.py 
