@@ -185,9 +185,35 @@ def render_auth(db):
     
     # Features informativas
     c1, c2, c3 = st.columns(3)
-    with c1: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center; color: #fff;"><b>🛰️ SCANNER</b></div>', unsafe_allow_html=True)
-    with c2: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center; color: #fff"><b>🧬 CONFIGURACION</b></div>', unsafe_allow_html=True)
-    with c3: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center; color: #fff"><b>📝 EXPORT</b></div>', unsafe_allow_html=True)
+    # Grid de Descripciones
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+            <div class="feature-card">
+                <h3>🛰️ SCANNER</h3>
+                <p>Motor de vigilancia en tiempo real que identifica confluencias técnicas exactas, localizando activos en niveles críticos de sobreventa para ejecuciones Sniper.</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    with col2:
+        st.markdown("""
+            <div class="feature-card">
+                <h3>🧬 CONFIGURACION</h3>
+                <p>Cerebro algorítmico donde defines niveles de RSI, Bollinger y volumen mínimo, personalizando la sensibilidad del sistema a tu estrategia.</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+    with col3:
+        st.markdown("""
+            <div class="feature-card">
+                <h3>📝 EXPORT</h3>
+                <p>Herramienta de auditoría para descargar tu historial completo en CSV/Excel, permitiendo backtesting real y gestión de PnL fuera de la nube.</p>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.write("")
+    st.write("")
 
     st.divider()
     _, auth_col, _ = st.columns([1, 1.5, 1])
