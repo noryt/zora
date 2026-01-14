@@ -6,13 +6,16 @@ load_dotenv()
 
 class ZoraDatabase:
     def __init__(self):
-        url: str = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-        key: str = os.getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY")
-        
-        if not url or not key:
-            raise ValueError("SUPABASE_URL o SUPABASE_KEY no configurados en .env")
-            
-        self.supabase: Client = create_client(url, key)
+        # Intentar obtener de Streamlit Secrets (Nube)
+        # Si no existe (Local), intentar obtener de variables de entorno
+        self.url = st.secrets.get("SUPABASE_URL") or os.environ.get("SUPABASE_URL")
+        self.key = st.secrets.get("SUPABASE_KEY") or os.environ.get("SUPABASE_KEY")
+
+        if not self.url or not self.key:
+            # Si llegamos aquí, es que no están en ningún lado
+            raise ValueError("Error: SUPABASE_URL o SUPABASE_KEY no encontrados.")
+
+        self.supabase = create_client(self.url, self.key)
 
     def create_user(self, email, password, full_name):
         """Crea un nuevo usuario y su perfil inicial."""
