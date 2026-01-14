@@ -29,7 +29,7 @@ def apply_custom_ui():
             text-transform: uppercase;
         }
         button[kind="primary"] p {
-            color: #000000 !important;
+            color: #fff !important;
             font-weight: 900 !important;
         }
 
