@@ -199,9 +199,32 @@ def render_dashboard(db):
         st.rerun()
 
     # Tabs Gigantes
-    t_scan, t_jou, t_adn = st.tabs(["🛰️ RADAR", "📝 DIARIO", "🧬 ADN"])
+    t_scan, t_jou, t_adn = st.tabs(["🛰️ RADAR", "📝 DIARIO", "🧬 AJUSTES"])
 
     with t_scan:
+        st.markdown("""
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+            <div class="pulse-circle"></div>
+            <span style="color: #00ff88; font-weight: bold; font-family: 'Inter', sans-serif; font-size: 0.9rem;">
+                SISTEMA SENTINEL ACTIVO - ESCANEANDO...
+            </span>
+        </div>
+        <style>
+        .pulse-circle {
+            width: 12px; height: 12px; 
+            background-color: #00ff88; 
+            border-radius: 50%; 
+            box-shadow: 0 0 10px #00ff88; 
+            animation: pulse-animation 1.5s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { transform: scale(0.95); opacity: 0.7; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.7; }
+        }
+        </style>
+    """, unsafe_allow_html=True)
+        
         st.markdown("### 🔭 Radar de Oportunidades")
         signals = db.supabase.table("signals_today").select("*").eq("user_id", u_id).execute()
         if not signals.data:
