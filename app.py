@@ -214,7 +214,7 @@ def render_dashboard(db):
                     with st.expander("📊 VER ANÁLISIS TÉCNICO"):
                         render_tv_chart(s['symbol'])
                     if st.button(f"EJECUTAR {s['symbol']}", key=f"g_{s['symbol']}", type="primary"):
-                    db.save_trade(u_id, s['symbol'], "LONG", s['entry_price'], s.get('take_profit', 0), "Signal")
+                        db.save_trade(u_id, s['symbol'], "LONG", s['entry_price'], s.get('take_profit', 0), "Signal")
                     # Añadimos un icono de escudo o radar
                     st.toast(f"Trade {s['symbol']} sincronizado", icon='🛡️')
 
