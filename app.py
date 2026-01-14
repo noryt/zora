@@ -94,15 +94,15 @@ def render_tv_chart(symbol):
 # --- 4. LANDING PAGE + AUTH ---
 def render_auth(db):
     apply_custom_ui()
-    st.markdown("<h1 style='text-align: center; color: #FFD700; font-size: 3.5rem; font-weight: 900;'>ZORA SENTINEL</h1>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center;'>Tu Terminal de Inteligencia Algorítmica</h3>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #FFD700; font-size: 3.5rem; font-weight: 900;'>ZORA by Scalinity</h1>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align: center;'>Radar de Inteligencia Algorítmica</h3>", unsafe_allow_html=True)
     
     st.write("")
     
     # Grid Informativo
     c1, c2, c3 = st.columns(3)
     with c1: st.markdown('<div class="feature-box"><h1 style="margin:0;">🛰️</h1><b>SCANNER PRO</b><br>Escaneo de confluencias en tiempo real.</div>', unsafe_allow_html=True)
-    with c2: st.markdown('<div class="feature-box"><h1 style="margin:0;">🧬</h1><b>ADN PERSONAL</b><br>Ajusta el radar a tu gestión de riesgo.</div>', unsafe_allow_html=True)
+    with c2: st.markdown('<div class="feature-box"><h1 style="margin:0;">🧬</h1><b>CONFIGURACION PERSONALIZADA</b><br>Ajusta el radar a tu gestión de riesgo.</div>', unsafe_allow_html=True)
     with c3: st.markdown('<div class="feature-box"><h1 style="margin:0;">📝</h1><b>JOURNAL</b><br>Métricas de win-rate y PnL automático.</div>', unsafe_allow_html=True)
 
     st.write("---")
