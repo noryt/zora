@@ -3,7 +3,6 @@ import pandas as pd
 from database.supabase import ZoraDatabase
 from streamlit_autorefresh import st_autorefresh
 
-# --- 1. CONFIGURACIÓN ---
 st.set_page_config(page_title="Zora", page_icon="🛡️", layout="wide", initial_sidebar_state="collapsed")
 
 def apply_custom_ui():

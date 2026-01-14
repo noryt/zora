@@ -3,9 +3,7 @@ import pandas as pd
 from supabase import create_client
 from coinbase.rest import RESTClient
 
-# --- CONFIGURACIÓN DE APIS (Desde GitHub Secrets) ---
 def get_engine():
-    # GitHub inyecta estas variables automáticamente desde Secrets
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_KEY")
     api_key = os.environ.get("CB_API_KEY")
@@ -33,9 +31,8 @@ def calculate_indicators(df):
 
 def run_scan():
     db, cb = get_engine()
-    print("🚀 Iniciando escaneo de mercado...")
+    print("🚀 Iniciando escaneo...")
     
-    # 1. Obtener todos los usuarios y sus estrategias
     users = db.table("strategies").select("*").execute()
     
     # 2. Obtener lista de activos (Top pares USD)

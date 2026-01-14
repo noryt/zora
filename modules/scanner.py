@@ -66,15 +66,12 @@ class ScalinityEliteScanner:
             df = data['df']
             precio = data['precio']
             
-            # --- FILTROS ESTRICTOS ---
-            # 1. EMA 200 (Tendencia alcista macro)
+        
             ema200 = df['c'].ewm(span=200, adjust=False).mean().iloc[-1]
             if precio < ema200: continue 
 
-            # 2. RSI de sobreventa
             if data['rsi'] > rsi_limit: continue
 
-            # 3. Bandas de Bollinger 2.5
             ma20 = df['c'].rolling(20).mean().iloc[-1]
             std = df['c'].rolling(20).std().iloc[-1]
             lower_band = ma20 - (std * std_dev_mult)
