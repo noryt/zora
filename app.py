@@ -257,7 +257,7 @@ def render_dashboard(db):
                                 "exit_price": float(exit_price),
                                 "status": "CLOSED",
                                 "profit": float(final_profit),
-                                "exit_price": ahora
+                                "created_at": ahora
                             }).eq("id", st.session_state.closing_id).execute()
                             
                             # 3. Limpieza de estado exitosa
