@@ -162,7 +162,7 @@ def render_tv_chart(symbol):
 # --- 4. RENDER LANDING PAGE ---
 def render_auth(db):
     apply_custom_ui()
-    st.markdown("<h1 style='text-align: center; color: #FFD700; font-weight: 900; margin-bottom: 30px;'>ZORA SENTINEL</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center; color: #FFD700; font-weight: 900; margin-bottom: 30px;'>ZORA CRYPTO</h1>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns(3)
     with col1:
