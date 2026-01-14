@@ -86,13 +86,39 @@ def apply_custom_ui():
             border-bottom: 4px solid #FFD700 !important;
         }
 
-        /* CORRECCIÓN EXPANDER (VER GRÁFICO) */
+       /* CORRECCIÓN DEFINITIVA EXPANDER (ABIERTO, CERRADO Y HOVER) */
+        /* 1. El contenedor principal */
         div[data-testid="stExpander"], details {
             background-color: #111827 !important;
             border: 1px solid #1f2937 !important;
             border-radius: 12px !important;
         }
-        summary { color: #FFD700 !important; font-weight: bold !important; padding: 10px !important; }
+
+        /* 2. La barra del título (Summary) cuando está abierto o cerrado */
+        div[data-testid="stExpander"] summary {
+            background-color: #111827 !important;
+            color: #FFD700 !important; /* Texto siempre Dorado */
+            padding: 10px !important;
+        }
+
+        /* 3. El contenido de adentro cuando se abre */
+        div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] {
+            background-color: #111827 !important;
+            border: none !important;
+        }
+
+        /* 4. Eliminar el efecto blanco al hacer click o estar activo */
+        details[open] > summary {
+            background-color: #111827 !important;
+            color: #FFD700 !important;
+            border-bottom: 1px solid #1f2937 !important;
+        }
+
+        /* 5. Forzar que no cambie a blanco en Hover */
+        div[data-testid="stExpander"]:hover, summary:hover {
+            background-color: #111827 !important;
+            color: #ffffff !important;
+        }
 
         /* LIMPIEZA INTERFAZ */
         header, footer, #MainMenu { visibility: hidden; }
