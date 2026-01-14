@@ -7,7 +7,7 @@ from datetime import datetime
 
 # --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
-    page_title="Zora Sentinel",
+    page_title="Zora Crypto",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="collapsed"
