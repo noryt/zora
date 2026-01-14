@@ -235,8 +235,40 @@ def render_dashboard(db):
         if res.data:
             df = pd.DataFrame(res.data)
             pnl = df[df['status'] == 'CLOSED']['profit'].sum() if not df.empty else 0
+            
+            # 1. Dashboard de PnL
             st.markdown(f'<div style="background:#111827; padding:20px; border-radius:15px; border:2px solid #FFD700; text-align:center;"><p style="margin:0; color:#8b949e;">PNL TOTAL ACUMULADO</p><h1 style="color:{"#00ff88" if pnl >= 0 else "#ff4b4b"}; margin:0; font-size:2.5rem;">${pnl:,.2f}</h1></div>', unsafe_allow_html=True)
             
+            # 2. LÓGICA DE CIERRE (FORMULARIO DINÁMICO)
+            if 'closing_id' in st.session_state:
+                with st.container(border=True):
+                    st.warning(f"🛡️ FINALIZAR OPERACIÓN")
+                    exit_price = st.number_input("Precio de Salida (Coinbase)", value=float(st.session_state.entry_p))
+                    
+                    c_col1, c_col2 = st.columns(2)
+                    if c_col1.button("CONFIRMAR CIERRE", type="primary"):
+                        # Calculamos PnL simple
+                        final_profit = exit_price - st.session_state.entry_p
+                        
+                        # Actualizamos en Supabase
+                        db.supabase.table("journal").update({
+                            "exit_price": exit_price,
+                            "status": "CLOSED",
+                            "profit": final_profit,
+                            "closed_at": datetime.now().isoformat()
+                        }).eq("id", st.session_state.closing_id).execute()
+                        
+                        # Limpiamos estado y refrescamos
+                        del st.session_state['closing_id']
+                        st.success("Trade Cerrado con Éxito")
+                        st.rerun()
+                        
+                    if c_col2.button("CANCELAR"):
+                        del st.session_state['closing_id']
+                        st.rerun()
+                st.divider()
+
+            # 3. LISTA DE TRADES
             st.write("")
             st.download_button("📥 EXPORTAR CSV", df.to_csv(index=False), "trades.csv", "text/csv", use_container_width=True)
             
@@ -245,16 +277,19 @@ def render_dashboard(db):
                     c1, c2 = st.columns([3, 1])
                     with c1:
                         st.write(f"**{trade['symbol']}**")
-                        st.caption(f"IN: {trade['entry_price']} | STATUS: {trade['status']}")
+                        st.caption(f"ENTRADA: ${trade['entry_price']} | {trade['status']}")
                     with c2:
                         if trade['status'] == 'OPEN':
-                            if st.button("CERRAR", key=f"c_{trade['id']}", type="primary"):
-                                st.session_state.update({'closing_id': trade['id'], 'entry_p': trade['entry_price']})
+                            # Al hacer click, guardamos los datos en session_state para activar el form de arriba
+                            if st.button("CERRAR", key=f"btn_close_{trade['id']}", type="primary"):
+                                st.session_state.closing_id = trade['id']
+                                st.session_state.entry_p = trade['entry_price']
                                 st.rerun()
                         else:
                             clr = "#00ff88" if trade['profit'] > 0 else "#ff4b4b"
-                            st.markdown(f"<p style='color:{clr}; font-weight:bold; text-align:right;'>${trade['profit']:,.2f}</p>", unsafe_allow_html=True)
-        else: st.info("No hay registros en el diario.")
+                            st.markdown(f"<p style='color:{clr}; font-weight:bold; text-align:right; margin:0;'>${trade['profit']:,.2f}</p>", unsafe_allow_html=True)
+        else:
+            st.info("No hay registros en el diario.")
 
     with t_adn:
         conf = db.get_user_strategy(u_id)
