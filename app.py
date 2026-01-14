@@ -8,7 +8,7 @@ from io import BytesIO
 
 # --- 1. CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
-    page_title="Zora Sentinel",
+    page_title="Zora Crypto Radar",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -163,7 +163,7 @@ def render_auth(db):
     # Features informativas
     c1, c2, c3 = st.columns(3)
     with c1: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center;"><b>🛰️ SCANNER</b></div>', unsafe_allow_html=True)
-    with c2: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center;"><b>🧬 ADN</b></div>', unsafe_allow_html=True)
+    with c2: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center;"><b>🧬 CONFIGURACION</b></div>', unsafe_allow_html=True)
     with c3: st.markdown('<div style="background:#111827; padding:15px; border-radius:10px; text-align:center;"><b>📝 EXPORT</b></div>', unsafe_allow_html=True)
 
     st.divider()
@@ -202,22 +202,26 @@ def render_dashboard(db):
     t_scan, t_jou, t_adn = st.tabs(["🛰️ RADAR", "📝 DIARIO", "🧬 ADN"])
 
     with t_scan:
-        st.markdown("### 🔭 Radar de Oportunidades")
+    st.markdown("### 🔭 Estado del Radar")
+    
+    # Intento de lectura sin filtros para probar conexión
+    test_query = db.supabase.table("signals_today").select("*", count="exact").execute()
+    
+    if test_query.count == 0:
+        st.error("🚨 LA TABLA 'signals_today' ESTÁ VACÍA EN SUPABASE.")
+        st.info("Revisa que tu script de escaneo esté enviando datos correctamente.")
+    else:
+        st.success(f"✅ Hay {test_query.count} señales en la base de datos global.")
+        
+        # Ahora filtramos por tu usuario
         signals = db.supabase.table("signals_today").select("*").eq("user_id", u_id).execute()
+        
         if not signals.data:
-            st.info("Buscando señales con tu configuración de ADN...")
+            st.warning("⚠️ Hay señales, pero ninguna coincide con tu USER_ID o tus filtros de ADN.")
         else:
-            for s in signals.data:
-                with st.container(border=True):
-                    st.markdown(f"#### {s['symbol']} | RSI: <span style='color:#FFD700'>{s['rsi']}</span>", unsafe_allow_html=True)
-                    st.write(f"Entrada Sugerida: **${s['entry_price']:,}**")
-                    with st.expander("📊 VER ANÁLISIS TÉCNICO"):
-                        render_tv_chart(s['symbol'])
-                    if st.button(f"EJECUTAR {s['symbol']}", key=f"g_{s['symbol']}", type="primary"):
-                        db.save_trade(u_id, s['symbol'], "LONG", s['entry_price'], s.get('take_profit', 0), "Signal")
-                    # Añadimos un icono de escudo o radar
-                    st.toast(f"Trade {s['symbol']} sincronizado", icon='🛡️')
-
+            # Aquí va el bucle 'for s in signals.data' que ya tenemos...
+            pass
+        
     with t_jou:
         res = db.get_trade_history(u_id)
         if res.data:
