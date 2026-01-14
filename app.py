@@ -4,15 +4,13 @@ from database.supabase import ZoraDatabase
 from streamlit_autorefresh import st_autorefresh
 import streamlit.components.v1 as components
 
-# --- 1. CONFIGURACIÓN ---
 st.set_page_config(
-    page_title="Zora Sentinel",
+    page_title="Zora by Scalinity",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. UI: CSS RADICAL (RECUPERANDO IDENTIDAD) ---
 def apply_custom_ui():
     st.markdown("""
         <style>
@@ -71,6 +69,7 @@ def apply_custom_ui():
             border: 1px solid #1f2937;
             text-align: center;
             margin-top: 10px;
+            color: #fff;
         }
 
         /* UI CLEANUP */
