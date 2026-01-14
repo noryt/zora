@@ -202,7 +202,7 @@ def render_dashboard(db):
     t_scan, t_jou, t_adn = st.tabs(["🛰️ RADAR", "📝 DIARIO", "🧬 ADN"])
 
     with t_scan:
-    st.markdown("### 🔭 Estado del Radar")
+     st.markdown("### 🔭 Estado del Radar")
     
     # Intento de lectura sin filtros para probar conexión
     test_query = db.supabase.table("signals_today").select("*", count="exact").execute()
@@ -221,7 +221,7 @@ def render_dashboard(db):
         else:
             # Aquí va el bucle 'for s in signals.data' que ya tenemos...
             pass
-        
+
     with t_jou:
         res = db.get_trade_history(u_id)
         if res.data:
