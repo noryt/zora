@@ -6,7 +6,6 @@ load_dotenv()
 
 class ZoraDatabase:
     def __init__(self):
-        # Asegúrate de tener estas variables en tu archivo .env
         url: str = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
         key: str = os.getenv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY")
         
@@ -15,7 +14,6 @@ class ZoraDatabase:
             
         self.supabase: Client = create_client(url, key)
 
-    # --- AUTENTICACIÓN ---
     def create_user(self, email, password, full_name):
         """Crea un nuevo usuario y su perfil inicial."""
         try:
@@ -25,7 +23,6 @@ class ZoraDatabase:
             })
             
             if auth_res.user:
-                # 1. Crear el perfil en tabla 'profiles'
                 user_data = {
                     "id": auth_res.user.id,
                     "username": email.split('@')[0],
@@ -34,7 +31,6 @@ class ZoraDatabase:
                 }
                 self.supabase.table("profiles").insert(user_data).execute()
                 
-                # 2. Crear estrategia base (ADN Sentinel)
                 self.supabase.table("strategies").insert({"user_id": auth_res.user.id}).execute()
                 
                 return True, "Registro exitoso. Revisa tu email."
@@ -56,7 +52,6 @@ class ZoraDatabase:
             print(f"Error en login: {e}")
             return False, None
 
-    # --- GESTIÓN DE ESTRATEGIAS ---
     def get_user_strategy(self, user_id):
         try:
             response = self.supabase.table("strategies").select("*").eq("user_id", user_id).execute()
@@ -71,7 +66,6 @@ class ZoraDatabase:
         data = {"user_id": user_id, "rsi_limit": rsi_limit, "use_bb": use_bb}
         return self.supabase.table("strategies").upsert(data).execute()
 
-    # --- GESTIÓN DEL DIARIO (JOURNAL) ---
     def save_trade(self, user_id, symbol, trade_type, entry, exit, notes):
         profit = exit - entry if trade_type == "LONG" else entry - exit
         data = {
