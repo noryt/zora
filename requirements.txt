@@ -1,6 +1,6 @@
 streamlit
 pandas
 supabase
+coinbase-advanced-py
+streamlit-autorefresh
 python-dotenv
-coinbase-python
-streamlit-authenticator
