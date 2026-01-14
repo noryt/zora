@@ -70,6 +70,15 @@ def apply_custom_ui():
             text-align: center;
             margin-bottom: 20px;
         }
+        
+        .stButton > button[kind="primary"] p {
+        color: #000000 !important;
+        font-weight: 900 !important;
+        }
+
+        .stButton > button {
+        border: 1px solid #FFD700 !important; /* Añade un borde dorado para que no se pierda */
+        }
 
         /* LANDING CARDS */
         .feature-box {
