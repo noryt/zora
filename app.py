@@ -3,347 +3,126 @@ import pandas as pd
 from database.supabase import ZoraDatabase
 from streamlit_autorefresh import st_autorefresh
 import streamlit.components.v1 as components
-from datetime import datetime
-from io import BytesIO
 
-# --- 1. CONFIGURACIÓN DE PÁGINA ---
+# --- 1. CONFIGURACIÓN (Ocultar barras laterales innecesarias en móvil) ---
 st.set_page_config(
-    page_title="Zora Crypto Radar",
+    page_title="Zora Sentinel",
     page_icon="🛡️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. FUNCIÓN DE DISEÑO (ESTO CONTROLA TODA LA ESTÉTICA) ---
+# --- 2. CSS MOBILE-FRIENDLY REFORZADO ---
 def apply_custom_ui():
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         
-        /* FONDO Y TEXTO */
+        /* Reset para Móvil */
         .stApp { background-color: #05070a !important; }
-        h1, h2, h3, p, span, label { color: #ffffff !important; font-family: 'Inter', sans-serif; }
-
-        /* TICKER TAPE */
-        .ticker-wrapper {
-            background: #161b22;
-            padding: 12px 0;
-            border-bottom: 2px solid #FFD700;
-            overflow: hidden;
-            position: fixed;
-            top: 0; left: 0; width: 100%; z-index: 1000;
+        
+        /* 1. Ajuste de Contenedor Principal (Quitar márgenes laterales en móvil) */
+        .block-container {
+            padding-top: 4rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+            max-width: 100% !important;
         }
-        .ticker-text {
-            display: inline-block;
-            white-space: nowrap;
-            animation: ticker 30s linear infinite;
-            color: #FFD700;
-            font-family: monospace;
-            font-size: 1rem;
-        }
-        @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* BOTONES AMARILLOS (PRIMARY) */
-        div.stButton > button[kind="primary"], .stFormSubmitButton > button[kind="primary"] {
-            background-color: #FFD700 !important;
-            color: #000000 !important;
-            border: none !important;
-            border-radius: 12px !important;
-            height: 3.5rem !important;
-            font-weight: 900 !important;
+        /* 2. Tarjetas de la Landing (Forzar una debajo de otra en móvil) */
+        @media (max-width: 640px) {
+            div[data-testid="column"] {
+                width: 100% !important;
+                flex: 1 1 100% !important;
+                min-width: 100% !important;
+                margin-bottom: 15px !important;
+            }
+            h1 { font-size: 2.2rem !important; }
+            .feature-card { padding: 15px !important; }
+        }
+
+        .feature-card {
+            background: #111827;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #1f2937;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .feature-card h3 { color: #FFD700 !important; font-size: 1.1rem !important; }
+        .feature-card p { font-size: 0.85rem !important; color: #94a3b8 !important; }
+
+        /* 3. Botones Gigantes para Pulgares */
+        div.stButton > button {
+            width: 100% !important;
+            height: 3.8rem !important;
             font-size: 1.1rem !important;
-            text-transform: uppercase;
-        }
-        div.stButton > button[kind="primary"] p { color: #000000 !important; font-weight: 900 !important; }
-
-        /* BOTONES SECUNDARIOS (CANCELAR / OTROS) */
-        div.stButton > button:not([kind="primary"]) {
-            background-color: #161b22 !important;
-            color: #ffffff !important;
-            border: 1px solid #FFD700 !important;
-            border-radius: 12px !important;
+            border-radius: 14px !important;
+            background-color: #FFD700 !important;
+            color: #000 !important;
+            font-weight: 900 !important;
         }
 
-        /* PESTAÑAS GIGANTES (REAL TABS) */
+        /* 4. Pestañas (Tabs) Estilo Mobile Bar */
         div[data-testid="stTabs"] [data-baseweb="tab-list"] {
+            display: flex !important;
+            justify-content: space-around !important;
             background-color: #161b22 !important;
-            gap: 5px !important;
+            position: sticky;
+            top: 46px; /* Justo debajo del ticker */
+            z-index: 999;
             padding: 5px !important;
-            border-radius: 12px !important;
-            margin-bottom: 20px !important;
         }
         div[data-testid="stTabs"] button {
+            font-size: 0.8rem !important; /* Más pequeño para que quepan 3 en línea */
             flex: 1 !important;
-            height: 65px !important;
-            font-size: 1.1rem !important;
-            font-weight: 700 !important;
-            color: #8b949e !important;
-            border: none !important;
-            background-color: transparent !important;
-        }
-        div[data-testid="stTabs"] button[aria-selected="true"] {
-            color: #FFD700 !important;
-            border-bottom: 4px solid #FFD700 !important;
         }
 
-       /* CORRECCIÓN DEFINITIVA EXPANDER (ABIERTO, CERRADO Y HOVER) */
-        /* 1. El contenedor principal */
-        div[data-testid="stExpander"], details {
-            background-color: #111827 !important;
-            border: 1px solid #1f2937 !important;
-            border-radius: 12px !important;
-        }
-
-        /* 2. La barra del título (Summary) cuando está abierto o cerrado */
-        div[data-testid="stExpander"] summary {
-            background-color: #111827 !important;
-            color: #FFD700 !important; /* Texto siempre Dorado */
-            padding: 10px !important;
-        }
-
-        /* 3. El contenido de adentro cuando se abre */
-        div[data-testid="stExpander"] div[data-testid="stVerticalBlock"] {
-            background-color: #111827 !important;
-            border: none !important;
-        }
-
-        /* 4. Eliminar el efecto blanco al hacer click o estar activo */
-        details[open] > summary {
-            background-color: #111827 !important;
-            color: #FFD700 !important;
-            border-bottom: 1px solid #1f2937 !important;
-        }
-
-        /* 5. Forzar que no cambie a blanco en Hover */
-        div[data-testid="stExpander"]:hover, summary:hover {
-            background-color: #111827 !important;
-            color: #ffffff !important;
-        }
-                /* CORRECCIÓN ALERTAS (TOAST) */
-        div[data-testid="stToast"] {
-            background-color: #111827 !important; /* Fondo azul oscuro Zora */
-            border: 1px solid #FFD700 !important; /* Borde dorado Sniper */
-            border-radius: 10px !important;
-            width: auto !important;
-        }
-
-        /* Color del texto y del icono dentro de la alerta */
-        div[data-testid="stToast"] [data-testid="stMarkdownContainer"] p {
-            color: #ffffff !important;
-            font-weight: 700 !important;
-        }
-
-        /* Botón de cerrar (X) de la alerta */
-        div[data-testid="stToast"] button {
-            color: #FFD700 !important;
-        }
-        /* LIMPIEZA INTERFAZ */
-        header, footer, #MainMenu { visibility: hidden; }
-        .block-container { padding-top: 5.5rem !important; }
+        /* Ocultar elementos de escritorio */
+        #MainMenu, footer, header { visibility: hidden; }
         </style>
-
     """, unsafe_allow_html=True)
-    # TICKER TAPE REAL DE TRADINGVIEW (Datos de Coinbase)
+
+    # Ticker optimizado para no romperse en pantallas pequeñas
     ticker_html = """
-    <div style="position: fixed; top: 0; left: 0; width: 100%; z-index: 1000; height: 46px; background: #161b22;">
+    <div style="position: fixed; top: 0; left: 0; width: 100%; z-index: 1001; height: 46px; background: #161b22;">
         <iframe scrolling="no" allowtransparency="true" frameborder="0" 
-            src="https://s.tradingview.com/embed-widget/ticker-tape/?method=tags&symbols%5B%5D%7B%22proName%22%3A%22COINBASE%3ABTCUSD%22%2C%22title%22%3A%22BTC%2FUSD%22%7D%2C%7B%22proName%22%3A%22COINBASE%3AETHUSD%22%2C%22title%22%3A%22ETH%2FUSD%22%7D%2C%7B%22proName%22%3A%22COINBASE%3ASOLUSD%22%2C%22title%22%3A%22SOL%2FUSD%22%7D%2C%7B%22proName%22%3A%22COINBASE%3AADAUSD%22%2C%22title%22%3A%22ADA%2FUSD%22%7D&showSymbolLogo=true&colorTheme=dark&isTransparent=false&displayMode=adaptive&locale=es" 
+            src="https://s.tradingview.com/embed-widget/ticker-tape/?symbols%5B%5D%7B%22proName%22%3A%22COINBASE%3ABTCUSD%22%7D%2C%7B%22proName%22%3A%22COINBASE%3AETHUSD%22%7D&colorTheme=dark&isTransparent=false&displayMode=adaptive&locale=es" 
             width="100%" height="46">
         </iframe>
     </div>
     """
     components.html(ticker_html, height=46)
 
-
-# --- 3. COMPONENTES ---
-def render_tv_chart(symbol):
-    # 1. Limpiamos el símbolo (ej. "BTC/USD" -> "BTCUSD")
-    # Nota: Coinbase suele usar USD en lugar de USDT para sus pares principales
-    cleaned = symbol.upper().replace("/", "").replace("-", "").replace(" ", "")
-    
-    # 2. Cambiamos el prefijo a COINBASE
-    tv_symbol = f"COINBASE:{cleaned}"
-    
-    tv_html = f"""
-    <div style="height:400px;">
-        <iframe 
-            src="https://s.tradingview.com/widgetembed/?symbol={tv_symbol}&interval=15&theme=dark&style=1&timezone=Etc%2FUTC&studies=[]&hide_side_toolbar=true&allow_symbol_change=false&save_image=false&calendar=false" 
-            width="100%" 
-            height="400" 
-            frameborder="0" 
-            allowtransparency="true" 
-            scrolling="no" 
-            allowfullscreen>
-        </iframe>
-    </div>
-    """
-    components.html(tv_html, height=400)
-# --- 4. SECCIÓN DE AUTENTICACIÓN ---
+# --- 3. RENDER LANDING (MOBILE FIRST) ---
 def render_auth(db):
     apply_custom_ui()
-    st.markdown("<h1 style='text-align: center; color: #FFD700; font-size: 3rem; font-weight: 900; margin-top:20px;'>ZORA BY SCALINITY</h1>", unsafe_allow_html=True)
     
-    # Features informativas
-    c1, c2, c3 = st.columns(3)
-    # Grid de Descripciones
+    st.markdown("<h1 style='text-align: center; color: #FFD700; font-weight: 900;'>ZORA SENTINEL</h1>", unsafe_allow_html=True)
+    
+    # En móvil, estas columnas se verán una debajo de otra gracias al CSS media query
     col1, col2, col3 = st.columns(3)
-    
     with col1:
-        st.markdown("""
-            <div class="feature-card">
-                <h3>🛰️ SCANNER</h3>
-                <p>Motor de vigilancia en tiempo real que identifica confluencias técnicas exactas, localizando activos en niveles críticos de sobreventa para ejecuciones Sniper.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown('<div class="feature-card"><h3>🛰️ SCANNER</h3><p>Vigilancia en tiempo real de confluencias técnicas.</p></div>', unsafe_allow_html=True)
     with col2:
-        st.markdown("""
-            <div class="feature-card">
-                <h3>🧬 CONFIGURACION</h3>
-                <p>Cerebro algorítmico donde defines niveles de RSI, Bollinger y volumen mínimo, personalizando la sensibilidad del sistema a tu estrategia.</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown('<div class="feature-card"><h3>🧬 ADN</h3><p>Configuración de algoritmos y límites de RSI.</p></div>', unsafe_allow_html=True)
     with col3:
-        st.markdown("""
-            <div class="feature-card">
-                <h3>📝 EXPORT</h3>
-                <p>Herramienta de auditoría para descargar tu historial completo en CSV/Excel, permitiendo backtesting real y gestión de PnL fuera de la nube.</p>
-            </div>
-        """, unsafe_allow_html=True)
+        st.markdown('<div class="feature-card"><h3>📝 EXPORT</h3><p>Auditoría de PnL y descarga de historial.</p></div>', unsafe_allow_html=True)
 
-    st.write("")
-    st.write("")
-
-    st.divider()
-    _, auth_col, _ = st.columns([1, 1.5, 1])
-    with auth_col:
-        m = st.tabs(["🔑 LOGIN", "✨ REGISTRO"])
-        with m[0]:
-            el = st.text_input("Email", key="l_e")
-            pl = st.text_input("Password", type="password", key="l_p")
-            if st.button("ENTRAR AL TERMINAL", type="primary"):
-                success, user = db.login_user(el, pl)
-                if success:
-                    st.session_state.update({'logged_in': True, 'user_id': user.id, 'user_email': user.email})
-                    st.rerun()
-        with m[1]:
-            er = st.text_input("Nuevo Email", key="r_e")
-            pr = st.text_input("Nueva Contraseña", type="password", key="r_p")
-            if st.button("CREAR MI CUENTA", type="primary"):
-                try:
-                    db.supabase.auth.sign_up({"email": er, "password": pr})
-                    st.success("Revisa tu correo para activar tu cuenta.")
-                except Exception as e: st.error(f"Error: {e}")
-
-# --- 5. DASHBOARD ---
-def render_dashboard(db):
-    apply_custom_ui()
-    st_autorefresh(interval=30000, key="ref_dash")
-    u_id = st.session_state.user_id
-
-    # Sidebar
-    if st.sidebar.button("Cerrar Sesión", type="primary"):
-        st.session_state.logged_in = False
-        st.rerun()
-
-    # Tabs Gigantes
-    t_scan, t_jou, t_adn = st.tabs(["🛰️ RADAR", "📝 DIARIO", "🧬 AJUSTES"])
-
-    with t_scan:
-        st.markdown("""
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-            <div class="pulse-circle"></div>
-            <span style="color: #00ff88; font-weight: bold; font-family: 'Inter', sans-serif; font-size: 0.9rem;">
-                SISTEMA SENTINEL ACTIVO - ESCANEANDO...
-            </span>
-        </div>
-        <style>
-        .pulse-circle {
-            width: 12px; height: 12px; 
-            background-color: #00ff88; 
-            border-radius: 50%; 
-            box-shadow: 0 0 10px #00ff88; 
-            animation: pulse-animation 1.5s infinite;
-        }
-        @keyframes pulse-animation {
-            0% { transform: scale(0.95); opacity: 0.7; }
-            70% { transform: scale(1.1); opacity: 1; }
-            100% { transform: scale(0.95); opacity: 0.7; }
-        }
-        </style>
-    """, unsafe_allow_html=True)
-        
-        st.markdown("### 🔭 Radar de Oportunidades")
-        signals = db.supabase.table("signals_today").select("*").eq("user_id", u_id).execute()
-        if not signals.data:
-            st.info("Buscando señales con tu configuración de ADN...")
-        else:
-            for s in signals.data:
-                with st.container(border=True):
-                    st.markdown(f"#### {s['symbol']} | RSI: <span style='color:#FFD700'>{s['rsi']}</span>", unsafe_allow_html=True)
-                    st.write(f"Entrada Sugerida: **${s['entry_price']:,}**")
-                    with st.expander("📊 VER ANÁLISIS TÉCNICO"):
-                        render_tv_chart(s['symbol'])
-                    if st.button(f"EJECUTAR {s['symbol']}", key=f"g_{s['symbol']}", type="primary"):
-                        db.save_trade(u_id, s['symbol'], "LONG", s['entry_price'], s.get('take_profit', 0), "Signal")
-                    # Añadimos un icono de escudo o radar
-                    st.toast(f"Trade {s['symbol']} sincronizado", icon='🛡️')
-
-    with t_jou:
-        res = db.get_trade_history(u_id)
-        if res.data:
-            df = pd.DataFrame(res.data)
-            closed = df[df['status'] == 'CLOSED']
-            pnl_total = closed['profit'].sum() if not closed.empty else 0.0
-            pnl_color = "#00ff88" if pnl_total >= 0 else "#ff4b4b"
-            
-            st.markdown(f'<div style="background:#111827; padding:20px; border-radius:15px; border:2px solid #FFD700; text-align:center;"><p style="margin:0; color:#8b949e;">PNL TOTAL</p><h1 style="color:{pnl_color}; margin:0; font-size:3rem;">${pnl_total:,.2f}</h1></div>', unsafe_allow_html=True)
-            st.download_button(label="📥 EXPORTAR CSV", data=df.to_csv(index=False), file_name='trades.csv', mime='text/csv', use_container_width=True)
-            
-            # Cierre de trades
-            if 'closing_id' in st.session_state:
-                with st.form("f_close"):
-                    st.markdown(f"### Cerrar {st.session_state.get('closing_symbol', 'Trade')}")
-                    exit_p = st.number_input("Precio Salida", format="%.4f", value=float(st.session_state.get('entry_p', 0)))
-                    c1, c2 = st.columns(2)
-                    if c1.form_submit_button("CONFIRMAR", type="primary"):
-                        p = exit_p - st.session_state.entry_p
-                        db.supabase.table("journal").update({"exit_price": exit_p, "status": "CLOSED", "profit": p, "closed_at": datetime.now().isoformat()}).eq("id", st.session_state.closing_id).execute()
-                        del st.session_state['closing_id']
-                        st.rerun()
-                    if c2.form_submit_button("CANCELAR"):
-                        del st.session_state['closing_id']
-                        st.rerun()
-
-            st.write("---")
-            for _, trade in df.sort_values('created_at', ascending=False).iterrows():
-                with st.container(border=True):
-                    c_a, c_b = st.columns([3, 1])
-                    with c_a:
-                        st.write(f"**{trade['symbol']}**")
-                        ex = f"${trade['exit_price']}" if trade['status'] == 'CLOSED' else "---"
-                        st.markdown(f"<small>IN: {trade['entry_price']} | OUT: {ex}</small>", unsafe_allow_html=True)
-                    with c_b:
-                        if trade['status'] == 'OPEN':
-                            if st.button("CERRAR", key=f"c_{trade['id']}", type="primary"):
-                                st.session_state.update({'closing_id': trade['id'], 'closing_symbol': trade['symbol'], 'entry_p': trade['entry_price']})
-                                st.rerun()
-                        else:
-                            clr = "#00ff88" if trade['profit'] > 0 else "#ff4b4b"
-                            st.markdown(f"<p style='color:{clr}; font-weight:bold; text-align:right;'>${trade['profit']:,.2f}</p>", unsafe_allow_html=True)
-
-    with t_adn:
-        conf = db.get_user_strategy(u_id)
-        with st.form("f_adn"):
-            rsi = st.slider("RSI Umbral", 10, 50, int(conf.get('rsi_limit', 30)))
-            if st.form_submit_button("GUARDAR ADN", type="primary"):
-                db.supabase.table("strategies").upsert({"user_id": u_id, "rsi_limit": rsi}).execute()
-                st.success("Configuración guardada.")
+    st.write("---")
+    
+    _, auth_box, _ = st.columns([0.1, 1, 0.1]) # En móvil ocupará casi todo el ancho
+    with auth_box:
+        tab_login, tab_reg = st.tabs(["🔑 ACCESO", "✨ REGISTRO"])
+        with tab_login:
+            st.text_input("Email", key="m_email")
+            st.text_input("Password", type="password", key="m_pass")
+            st.button("ENTRAR AL TERMINAL", type="primary", use_container_width=True)
 
 # --- INICIO ---
 db_instance = ZoraDatabase()
 if not st.session_state.get('logged_in'):
     render_auth(db_instance)
 else:
-    render_dashboard(db_instance)
+    # render_dashboard(db_instance)
+    pass
