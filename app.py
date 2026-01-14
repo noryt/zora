@@ -247,21 +247,27 @@ def render_dashboard(db):
                     
                     c_col1, c_col2 = st.columns(2)
                     if c_col1.button("CONFIRMAR CIERRE", type="primary"):
-                        # Calculamos PnL simple
-                        final_profit = exit_price - st.session_state.entry_p
-                        
-                        # Actualizamos en Supabase
-                        db.supabase.table("journal").update({
-                            "exit_price": exit_price,
-                            "status": "CLOSED",
-                            "profit": final_profit,
-                            "closed_at": datetime.now().isoformat()
-                        }).eq("id", st.session_state.closing_id).execute()
-                        
-                        # Limpiamos estado y refrescamos
-                        del st.session_state['closing_id']
-                        st.success("Trade Cerrado con Éxito")
-                        st.rerun()
+                        try:
+                            # 1. Aseguramos que los números sean float puros y la fecha sea ISO
+                            final_profit = float(exit_price) - float(st.session_state.entry_p)
+                            ahora = datetime.now().isoformat()
+
+                            # 2. Ejecutamos la actualización
+                            db.supabase.table("journal").update({
+                                "exit_price": float(exit_price),
+                                "status": "CLOSED",
+                                "profit": float(final_profit),
+                                "closed_at": ahora
+                            }).eq("id", st.session_state.closing_id).execute()
+                            
+                            # 3. Limpieza de estado exitosa
+                            del st.session_state['closing_id']
+                            st.toast("Trade Cerrado", icon="✅")
+                            st.rerun()
+
+                        except Exception as e:
+                            # Esto te dirá exactamente qué columna está fallando
+                            st.error(f"Error de Base de Datos: {str(e)}")
                         
                     if c_col2.button("CANCELAR"):
                         del st.session_state['closing_id']
