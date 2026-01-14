@@ -4,3 +4,4 @@ supabase
 coinbase-advanced-py
 streamlit-autorefresh
 python-dotenv
+extra-streamlit-components
