@@ -119,7 +119,24 @@ def apply_custom_ui():
             background-color: #111827 !important;
             color: #ffffff !important;
         }
+                /* CORRECCIÓN ALERTAS (TOAST) */
+        div[data-testid="stToast"] {
+            background-color: #111827 !important; /* Fondo azul oscuro Zora */
+            border: 1px solid #FFD700 !important; /* Borde dorado Sniper */
+            border-radius: 10px !important;
+            width: auto !important;
+        }
 
+        /* Color del texto y del icono dentro de la alerta */
+        div[data-testid="stToast"] [data-testid="stMarkdownContainer"] p {
+            color: #ffffff !important;
+            font-weight: 700 !important;
+        }
+
+        /* Botón de cerrar (X) de la alerta */
+        div[data-testid="stToast"] button {
+            color: #FFD700 !important;
+        }
         /* LIMPIEZA INTERFAZ */
         header, footer, #MainMenu { visibility: hidden; }
         .block-container { padding-top: 5.5rem !important; }
@@ -197,8 +214,9 @@ def render_dashboard(db):
                     with st.expander("📊 VER ANÁLISIS TÉCNICO"):
                         render_tv_chart(s['symbol'])
                     if st.button(f"EJECUTAR {s['symbol']}", key=f"g_{s['symbol']}", type="primary"):
-                        db.save_trade(u_id, s['symbol'], "LONG", s['entry_price'], s.get('take_profit', 0), "Signal")
-                        st.toast(f"Trade {s['symbol']} guardado.")
+                    db.save_trade(u_id, s['symbol'], "LONG", s['entry_price'], s.get('take_profit', 0), "Signal")
+                    # Añadimos un icono de escudo o radar
+                    st.toast(f"Trade {s['symbol']} sincronizado", icon='🛡️')
 
     with t_jou:
         res = db.get_trade_history(u_id)
