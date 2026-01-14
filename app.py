@@ -17,7 +17,8 @@ def apply_custom_ui():
         
         /* 1. FONDO GLOBAL */
         .stApp, div[data-testid="stAppViewContainer"] { 
-            background-color: #05070a !important; 
+            background-color: #05070a !important;
+                color: #fff; 
         }
 
         /* 2. BOTONES AMARILLOS (PRIMARY) */
