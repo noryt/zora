@@ -151,10 +151,27 @@ def apply_custom_ui():
 
 # --- 3. COMPONENTES ---
 def render_tv_chart(symbol):
-    cleaned = symbol.replace("/", "").replace("-", "")
-    tv_html = f'<iframe src="https://s.tradingview.com/widgetembed/?symbol=BINANCE:{cleaned}&interval=15&theme=dark" width="100%" height="400" frameborder="0"></iframe>'
+    # 1. Limpiamos el símbolo (ej. "BTC/USD" -> "BTCUSD")
+    # Nota: Coinbase suele usar USD en lugar de USDT para sus pares principales
+    cleaned = symbol.upper().replace("/", "").replace("-", "").replace(" ", "")
+    
+    # 2. Cambiamos el prefijo a COINBASE
+    tv_symbol = f"COINBASE:{cleaned}"
+    
+    tv_html = f"""
+    <div style="height:400px;">
+        <iframe 
+            src="https://s.tradingview.com/widgetembed/?symbol={tv_symbol}&interval=15&theme=dark&style=1&timezone=Etc%2FUTC&studies=[]&hide_side_toolbar=true&allow_symbol_change=false&save_image=false&calendar=false" 
+            width="100%" 
+            height="400" 
+            frameborder="0" 
+            allowtransparency="true" 
+            scrolling="no" 
+            allowfullscreen>
+        </iframe>
+    </div>
+    """
     components.html(tv_html, height=400)
-
 # --- 4. SECCIÓN DE AUTENTICACIÓN ---
 def render_auth(db):
     apply_custom_ui()
