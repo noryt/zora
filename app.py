@@ -19,61 +19,48 @@ st.set_page_config(
 
 # --- 2. MOTOR DE ESCANEO CONFIGURABLE (COINBASE) ---
 def run_market_scan(user_config):
-    """Escanea el mercado basándose en el ADN personalizado del usuario"""
-    try:
-        rsi_limit = user_config.get('rsi_limit', 30)
-        ema_period = user_config.get('ema_period', 200)
-        min_vol = user_config.get('min_vol', 1000000)
-        use_ema = user_config.get('use_ema', True)
-
-        exchange = ccxt.coinbase()
-        markets = exchange.load_markets()
-        # Filtramos pares USD activos en Coinbase
-        symbols = [s for s in markets.keys() if '/USD' in s and markets[s]['active']]
-        
-        found_signals = []
-        progress_bar = st.progress(0)
-        
-        # Analizamos los top 40 pares para optimizar velocidad en Streamlit
-        for i, sym in enumerate(symbols[:40]):
-            try:
-                # Pedimos suficientes velas para la EMA + margen
-                limit_bars = int(ema_period * 1.2) if use_ema else 50
-                ohlcv = exchange.fetch_ohlcv(sym, timeframe='15m', limit=limit_bars)
-                
-                if len(ohlcv) < limit_bars: continue
-
-                df = pd.DataFrame(ohlcv, columns=['t', 'o', 'h', 'l', 'c', 'v'])
-                
-                # Indicadores Técnicos
-                df['RSI'] = ta.rsi(df['c'], length=14)
-                if use_ema:
-                    df['EMA_DYN'] = ta.ema(df['c'], length=ema_period)
-                
-                last = df.iloc[-1]
-                vol_usd = last['v'] * last['c'] # Volumen estimado de la última vela
-
-                # LÓGICA DE FILTRADO (ADN)
-                cond_rsi = last['RSI'] <= rsi_limit
-                cond_vol = vol_usd >= (min_vol / 96) # Ajuste de volumen para velas de 15m
-                cond_ema = (last['c'] > last['EMA_DYN']) if use_ema else True
-
-                if cond_rsi and cond_ema and cond_vol:
-                    found_signals.append({
-                        'symbol': sym,
-                        'rsi': round(last['RSI'], 2),
-                        'price': last['c'],
-                        'vol': f"${vol_usd:,.0f}",
-                        'trend': "ALCISTA ✅" if (not use_ema or last['c'] > last['EMA_DYN']) else "N/A"
-                    })
-            except: continue
-            progress_bar.progress((i + 1) / 40)
+    # ... (inicio del código igual al anterior)
+    
+    found_signals = []
+    for i, sym in enumerate(symbols[:40]):
+        try:
+            ohlcv = exchange.fetch_ohlcv(sym, timeframe='15m', limit=100)
+            df = pd.DataFrame(ohlcv, columns=['t', 'o', 'h', 'l', 'c', 'v'])
             
-        progress_bar.empty()
-        return found_signals
-    except Exception as e:
-        st.error(f"Error en el motor de escaneo: {e}")
-        return []
+            # 1. INDICADORES CLAVE
+            df['RSI'] = ta.rsi(df['c'], length=14)
+            df['EMA50'] = ta.ema(df['c'], length=50)
+            df['EMA200'] = ta.ema(df['c'], length=200)
+            
+            last = df.iloc[-1]
+            prev = df.iloc[-2]
+            
+            # 2. SISTEMA DE PUNTUACIÓN (0 a 100)
+            score = 0
+            # +40 puntos si el RSI es muy bajo (Sobreventa real)
+            if last['RSI'] <= user_config.get('rsi_limit', 30): score += 40
+            elif last['RSI'] <= 45: score += 20 # Interés preventivo
+            
+            # +30 puntos si está por encima de la EMA 200 (Tendencia alcista)
+            if last['c'] > last['EMA200']: score += 30
+            
+            # +30 puntos si el volumen de esta vela es mayor al anterior (Entrada de capital)
+            if last['v'] > prev['v']: score += 30
+
+            # 3. FILTRO FINAL
+            # Solo te avisará si la puntuación es digna de tu inversión
+            if score >= 50:
+                confidence = "ALTA 💎" if score >= 80 else "MEDIA ⚖️"
+                found_signals.append({
+                    'symbol': sym,
+                    'score': score,
+                    'confidence': confidence,
+                    'price': last['c'],
+                    'rsi': round(last['RSI'], 2),
+                    'action': "COMPRAR" if score >= 80 else "OBSERVAR"
+                })
+        except: continue
+    return found_signals
 
 # --- 3. UI: CSS Y COMPONENTES VISUALES ---
 def apply_custom_ui():
