@@ -52,26 +52,30 @@ def run_market_scan(user_config):
                 is_cheap = last['RSI'] <= rsi_limit
                 is_bullish = last['c'] > last['EMA200']
 
+                # Inicialización de variables de riesgo
+                stop_loss = 0
+                take_profit = 0
+
                 # Definición de estatus y puntuación
                 if is_cheap and is_bullish:
                     status = "COMPRAR 💎"
                     score = 90
                     color = "#00ff88"
-    
-    # GESTIÓN DE RIESGO (NUEVO)
-    # Stop Loss un 2% por debajo de la EMA 200
-                    stop_loss = round(s['ema'] * 0.98, 4)
-    # Take Profit buscando ganar el doble de lo que arriesgas
-                    riesgo = s['price'] - stop_loss
-                    take_profit = round(s['price'] + (riesgo * 2), 4)
+                    # GESTIÓN DE RIESGO: Stop Loss 2% bajo EMA y Profit 2:1
+                    current_ema = last['EMA200']
+                    current_price = last['c']
+                    stop_loss = round(current_ema * 0.98, 4)
+                    riesgo = current_price - stop_loss
+                    take_profit = round(current_price + (riesgo * 2), 4)
+                    
                 elif is_cheap and not is_bullish:
-                    status = "OBSERVAR ⚠️ (Barato pero tendencia bajista)"
+                    status = "OBSERVAR ⚠️ (Bajista)"
                     score = 50
-                    color = "#ffaa00" # Naranja
+                    color = "#ffaa00"
                 elif last['RSI'] <= 45 and is_bullish:
-                    status = "INTERÉS 👀 (Sano y retrocediendo)"
+                    status = "INTERÉS 👀 (Retroceso)"
                     score = 60
-                    color = "#00aaff" # Azul
+                    color = "#00aaff"
                 else:
                     continue
 
@@ -82,13 +86,14 @@ def run_market_scan(user_config):
                     'price': last['c'],
                     'rsi': round(last['RSI'], 2),
                     'ema': round(last['EMA200'], 2),
-                    'color': color
+                    'color': color,
+                    'sl': stop_loss,
+                    'tp': take_profit
                 })
             except: continue
             progress_bar.progress((i + 1) / 40)
             
         progress_bar.empty()
-        # Ordenar por Score de mayor a menor
         return sorted(found_signals, key=lambda x: x['score'], reverse=True)
     except Exception as e:
         st.error(f"Error en el motor: {e}")
@@ -102,8 +107,6 @@ def apply_custom_ui():
         .stApp { background-color: #05070a !important; }
         h1, h2, h3, p, span, label { color: #ffffff !important; font-family: 'Inter', sans-serif; }
         .block-container { padding-top: 4.5rem !important; }
-        
-        /* Botón Estilo Zora Gold */
         div.stButton > button {
             background: linear-gradient(135deg, #FFD700 0%, #b8860b 100%) !important;
             color: #000000 !important;
@@ -149,17 +152,19 @@ def render_dashboard(db):
 
         data = st.session_state.get('radar_results', [])
         if not data:
-            st.info(f"ADN actual: RSI < {conf.get('rsi_limit', 30)}. El radar mostrará candidatos automáticos.")
+            st.info(f"Filtro: RSI < {conf.get('rsi_limit', 30)}.")
         else:
             for s in data:
                 with st.container(border=True):
-                    # Título con color dinámico según estatus
                     st.markdown(f"#### {s['symbol']} - <span style='color:{s['color']}'>{s['status']}</span>", unsafe_allow_html=True)
                     
                     c1, c2, c3 = st.columns(3)
                     c1.metric("Precio Actual", f"${s['price']}")
                     c2.metric("RSI (14)", s['rsi'])
                     c3.metric("EMA 200", f"${s['ema']}")
+                    
+                    if s['sl'] > 0:
+                        st.markdown(f"🛡️ **SL:** `${s['sl']}` | 🎯 **TP:** `${s['tp']}`")
                     
                     col_btn, col_exp = st.columns([1, 1])
                     with col_btn:
@@ -176,7 +181,7 @@ def render_dashboard(db):
             df = pd.DataFrame(res.data)
             st.dataframe(df, width="stretch")
         else:
-            st.info("Diario de trading vacío.")
+            st.info("Diario vacío.")
 
     with t_adn:
         st.subheader("🧬 Configuración de ADN")
@@ -187,7 +192,6 @@ def render_dashboard(db):
                 st.success("ADN Sincronizado.")
                 st.rerun()
 
-# --- 5. LÓGICA DE CONTROL ---
 def main():
     db = ZoraDatabase()
     if 'logged_in' not in st.session_state:
