@@ -54,9 +54,16 @@ def run_market_scan(user_config):
 
                 # Definición de estatus y puntuación
                 if is_cheap and is_bullish:
-                    status = "COMPRAR 💎 (Confluencia Alta)"
+                    status = "COMPRAR 💎"
                     score = 90
-                    color = "#00ff88" # Verde
+                    color = "#00ff88"
+    
+    # GESTIÓN DE RIESGO (NUEVO)
+    # Stop Loss un 2% por debajo de la EMA 200
+                    stop_loss = round(s['ema'] * 0.98, 4)
+    # Take Profit buscando ganar el doble de lo que arriesgas
+                    riesgo = s['price'] - stop_loss
+                    take_profit = round(s['price'] + (riesgo * 2), 4)
                 elif is_cheap and not is_bullish:
                     status = "OBSERVAR ⚠️ (Barato pero tendencia bajista)"
                     score = 50
