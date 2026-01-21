@@ -17,32 +17,28 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- 2. MOTOR DE ESCANEO Y RECOMENDACIÓN (CEREBRO) ---
+# --- 2. MOTOR DE ESCANEO CON MODO CANDIDATOS ---
 def run_market_scan(user_config):
-    """Escanea Coinbase y otorga un Score de inversión basado en el ADN"""
+    """Escanea Coinbase y clasifica activos en señales Premium o en Observación"""
     try:
         rsi_limit = user_config.get('rsi_limit', 30)
         ema_period = user_config.get('ema_period', 200)
-        use_ema = user_config.get('use_ema', True)
 
-        # Conexión a Coinbase
         exchange = ccxt.coinbase()
         markets = exchange.load_markets()
         
-        # Definición de símbolos (Solución al NameError)
+        # Filtro de pares USD activos
         symbols = [s for s in markets.keys() if '/USD' in s and markets[s]['active']]
         
         found_signals = []
         progress_bar = st.progress(0)
         
-        # Analizamos los top 40 pares para optimizar velocidad
+        # Analizamos los top 40 pares
         for i, sym in enumerate(symbols[:40]):
             try:
-                limit_needed = int(ema_period * 1.2) if use_ema else 50
-                ohlcv = exchange.fetch_ohlcv(sym, timeframe='15m', limit=limit_needed)
-                if i < 5: # Solo para las primeras 5 monedas
-                    st.write(f"DEBUG: {sym} tiene RSI {round(last['RSI'], 1)} y Precio {last['c']} vs EMA {round(last['EMA200'], 1)}")
-                if len(ohlcv) < 30: continue
+                # Pedimos 210 velas para que la EMA 200 sea precisa
+                ohlcv = exchange.fetch_ohlcv(sym, timeframe='15m', limit=210)
+                if len(ohlcv) < 200: continue
 
                 df = pd.DataFrame(ohlcv, columns=['t', 'o', 'h', 'l', 'c', 'v'])
                 
@@ -51,35 +47,42 @@ def run_market_scan(user_config):
                 df['EMA200'] = ta.ema(df['c'], length=200)
                 
                 last = df.iloc[-1]
-                prev = df.iloc[-2]
-
-                # --- SISTEMA DE SCORE DE INVERSIÓN (0-100) ---
-                score = 0
-                # Regla 1: RSI bajo (Hasta 40 pts)
-                if last['RSI'] <= rsi_limit: score += 40
-                elif last['RSI'] <= 45: score += 20
                 
-                # Regla 2: Tendencia Alcista (Hasta 30 pts)
-                if last['c'] > last['EMA200']: score += 30
-                
-                # Regla 3: Volumen Creciente (Hasta 30 pts)
-                if last['v'] > prev['v']: score += 30
+                # LÓGICA DE CLASIFICACIÓN
+                is_cheap = last['RSI'] <= rsi_limit
+                is_bullish = last['c'] > last['EMA200']
 
-                # Filtrar solo oportunidades reales (Score >= 50)
-                if score >= 50:
-                    found_signals.append({
-                        'symbol': sym,
-                        'score': score,
-                        'confidence': "ALTA 💎" if score >= 80 else "MEDIA ⚖️",
-                        'price': last['c'],
-                        'rsi': round(last['RSI'], 2),
-                        'action': "COMPRAR" if score >= 80 else "OBSERVAR"
-                    })
+                # Definición de estatus y puntuación
+                if is_cheap and is_bullish:
+                    status = "COMPRAR 💎 (Confluencia Alta)"
+                    score = 90
+                    color = "#00ff88" # Verde
+                elif is_cheap and not is_bullish:
+                    status = "OBSERVAR ⚠️ (Barato pero tendencia bajista)"
+                    score = 50
+                    color = "#ffaa00" # Naranja
+                elif last['RSI'] <= 45 and is_bullish:
+                    status = "INTERÉS 👀 (Sano y retrocediendo)"
+                    score = 60
+                    color = "#00aaff" # Azul
+                else:
+                    continue
+
+                found_signals.append({
+                    'symbol': sym,
+                    'status': status,
+                    'score': score,
+                    'price': last['c'],
+                    'rsi': round(last['RSI'], 2),
+                    'ema': round(last['EMA200'], 2),
+                    'color': color
+                })
             except: continue
             progress_bar.progress((i + 1) / 40)
             
         progress_bar.empty()
-        return found_signals
+        # Ordenar por Score de mayor a menor
+        return sorted(found_signals, key=lambda x: x['score'], reverse=True)
     except Exception as e:
         st.error(f"Error en el motor: {e}")
         return []
@@ -123,37 +126,42 @@ def render_tv_chart(symbol):
 # --- 4. RENDER DASHBOARD ---
 def render_dashboard(db):
     apply_custom_ui()
-    st_autorefresh(interval=60000, key="refresh_sync")
+    st_autorefresh(interval=60000, key="radar_refresh")
     u_id = st.session_state.user_id
 
-    t_scan, t_jou, t_adn = st.tabs(["🛰️ RADAR", "📝 DIARIO", "🧬 ADN"])
+    t_scan, t_jou, t_adn = st.tabs(["🛰️ RADAR SNIPER", "📝 DIARIO", "🧬 ADN"])
 
     with t_scan:
-        st.markdown("<h3 style='color: #00ff88; margin-top:10px;'>RECOMENDACIONES DE INVERSIÓN</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='color: #00ff88; margin-top:10px;'>VIGILANCIA DE ACTIVOS</h3>", unsafe_allow_html=True)
         conf = db.get_user_strategy(u_id)
         
-        if st.button("🚀 ANALIZAR OPORTUNIDADES", width="stretch"):
-            with st.spinner("Escaneando confluencias Sniper..."):
+        if st.button("🚀 INICIAR RADAR INTELIGENTE", width="stretch"):
+            with st.spinner("Escaneando el mercado..."):
                 results = run_market_scan(conf)
                 st.session_state.radar_results = results
 
         data = st.session_state.get('radar_results', [])
         if not data:
-            st.info(f"Radar listo. Escaneando activos con RSI < {conf.get('rsi_limit', 30)}")
+            st.info(f"ADN actual: RSI < {conf.get('rsi_limit', 30)}. El radar mostrará candidatos automáticos.")
         else:
             for s in data:
                 with st.container(border=True):
-                    c1, c2 = st.columns([2, 1])
-                    with c1:
-                        st.markdown(f"#### {s['symbol']} | Score: <span style='color:#FFD700;'>{s['score']}</span>", unsafe_allow_html=True)
-                        st.write(f"Confianza: **{s['confidence']}** | RSI: **{s['rsi']}**")
-                    with c2:
-                        label = f"{s['action']} {s['symbol']}"
-                        if st.button(label, key=f"btn_{s['symbol']}", width="stretch"):
+                    # Título con color dinámico según estatus
+                    st.markdown(f"#### {s['symbol']} - <span style='color:{s['color']}'>{s['status']}</span>", unsafe_allow_html=True)
+                    
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("Precio Actual", f"${s['price']}")
+                    c2.metric("RSI (14)", s['rsi'])
+                    c3.metric("EMA 200", f"${s['ema']}")
+                    
+                    col_btn, col_exp = st.columns([1, 1])
+                    with col_btn:
+                        if st.button(f"REGISTRAR {s['symbol']}", key=f"reg_{s['symbol']}", width="stretch"):
                             db.save_trade(u_id, s['symbol'], "LONG", s['price'], 0, "Radar Signal")
-                            st.toast(f"Orden de {s['action']} registrada", icon='🛡️')
-                    with st.expander("📊 VER GRÁFICO REALTIME"):
-                        render_tv_chart(s['symbol'])
+                            st.toast(f"Trade guardado: {s['symbol']}")
+                    with col_exp:
+                        with st.expander("📊 VER GRÁFICO"):
+                            render_tv_chart(s['symbol'])
 
     with t_jou:
         res = db.get_trade_history(u_id)
@@ -161,16 +169,14 @@ def render_dashboard(db):
             df = pd.DataFrame(res.data)
             st.dataframe(df, width="stretch")
         else:
-            st.info("No hay trades en el historial.")
+            st.info("Diario de trading vacío.")
 
     with t_adn:
         st.subheader("🧬 Configuración de ADN")
-        with st.form("adn_form_final"):
+        with st.form("adn_form_v3"):
             rsi_limit = st.slider("Umbral RSI Sniper", 10, 60, int(conf.get('rsi_limit', 30)))
             if st.form_submit_button("GUARDAR ADN", width="stretch"):
-                db.supabase.table("strategies").upsert({
-                    "user_id": u_id, "rsi_limit": rsi_limit
-                }).execute()
+                db.supabase.table("strategies").upsert({"user_id": u_id, "rsi_limit": rsi_limit}).execute()
                 st.success("ADN Sincronizado.")
                 st.rerun()
 
@@ -182,16 +188,16 @@ def main():
 
     if not st.session_state.logged_in:
         apply_custom_ui()
-        st.markdown("<h1 style='text-align:center; color:#FFD700;'>ZORA CRYPTO</h1>", unsafe_allow_html=True)
-        with st.form("login_ui"):
+        st.markdown("<h1 style='text-align:center; color:#FFD700; font-weight:900;'>ZORA CRYPTO</h1>", unsafe_allow_html=True)
+        with st.form("login_box"):
             e = st.text_input("Email")
-            p = st.text_input("Pass", type="password")
-            if st.form_submit_button("ACCEDER", width="stretch"):
+            p = st.text_input("Contraseña", type="password")
+            if st.form_submit_button("ACCEDER AL TERMINAL", width="stretch"):
                 success, user = db.login_user(e, p)
                 if success:
                     st.session_state.update({'logged_in': True, 'user_id': user.id})
                     st.rerun()
-                else: st.error("Error de acceso.")
+                else: st.error("Acceso denegado.")
     else:
         render_dashboard(db)
 
