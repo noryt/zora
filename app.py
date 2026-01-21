@@ -40,7 +40,8 @@ def run_market_scan(user_config):
             try:
                 limit_needed = int(ema_period * 1.2) if use_ema else 50
                 ohlcv = exchange.fetch_ohlcv(sym, timeframe='15m', limit=limit_needed)
-                
+                if i < 5: # Solo para las primeras 5 monedas
+                    st.write(f"DEBUG: {sym} tiene RSI {round(last['RSI'], 1)} y Precio {last['c']} vs EMA {round(last['EMA200'], 1)}")
                 if len(ohlcv) < 30: continue
 
                 df = pd.DataFrame(ohlcv, columns=['t', 'o', 'h', 'l', 'c', 'v'])
