@@ -5,3 +5,4 @@ ccxt
 numpy
 streamlit-autorefresh
 supabase
+python-dotenv
